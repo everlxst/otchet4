@@ -5,9 +5,6 @@ import sys
 import math
 from collections import deque
 
-# ============================================================
-# ИНИЦИАЛИЗАЦИЯ
-# ============================================================
 pygame.init()
 pygame.mixer.init()
 try:
@@ -16,48 +13,42 @@ try:
 except Exception:
     midi_available = False
 
-# Настройки экрана
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Волшебная Музыкальная Раскраска")
 clock = pygame.time.Clock()
 
-# Открываем системный MIDI для звука рояля
 midi_output = None
 if midi_available:
     try:
         midi_output = pygame.midi.Output(pygame.midi.get_default_output_id())
-        midi_output.set_instrument(0)  # Акустическое пианино
+        midi_output.set_instrument(0)
     except Exception:
         midi_output = None
 
-# Цвета интерфейса
 BG_COLOR = (245, 251, 255)
 TEXT_COLOR = (67, 97, 238)
 SHADOW_COLOR = (210, 220, 230)
-CANVAS_BG = (255, 255, 255)
+CANVAS_BG = (240, 240, 240)
+DRAW_BG = (255, 255, 255)
 LINE_COLOR = (40, 40, 40)
 
-# Палитра красок: (Цвет, Номер MIDI-ноты)
 PALETTE_DATA = [
-    ((255, 89, 94), 60),    # ДО
-    ((255, 145, 0), 62),    # РЕ
-    ((255, 202, 58), 64),   # МИ
-    ((138, 201, 38), 65),   # ФА
-    ((25, 130, 196), 67),   # СОЛЬ
-    ((43, 97, 238), 69),    # ЛЯ
-    ((106, 76, 147), 71),   # СИ
-    ((255, 111, 181), 72)   # ДО 2
+    ((255, 89, 94), 60),
+    ((255, 145, 0), 62),
+    ((255, 202, 58), 64),
+    ((138, 201, 38), 65),
+    ((25, 130, 196), 67),
+    ((43, 97, 238), 69),
+    ((106, 76, 147), 71),
+    ((255, 111, 181), 72),
 ]
 
 active_color = PALETTE_DATA[2][0]
 show_congrats = False
 particles = []
 
-# ============================================================
-# MIDI: НОТЫ И ФАНФАРА
-# ============================================================
 NOTE_DURATION_MS = 400
 active_notes = []
 
@@ -87,19 +78,18 @@ def play_win_fanfare():
     for i, note in enumerate(win_notes):
         pygame.time.set_timer(pygame.USEREVENT + 10 + i, 160 * (i + 1), loops=1)
 
-# ============================================================
-# ГЕНЕРАЦИЯ КАРТИНОК
-# ============================================================
 canvas_surface = pygame.Surface((800, 550))
 
 def draw_clean_sun(surf):
     surf.fill(CANVAS_BG)
+    pygame.draw.circle(surf, DRAW_BG, (400, 275), 120)
     for i in range(8):
         angle = i * (math.pi / 4)
         x2 = 400 + int(160 * math.cos(angle))
         y2 = 275 + int(160 * math.sin(angle))
         pygame.draw.line(surf, LINE_COLOR, (400, 275), (x2, y2), width=16)
     pygame.draw.circle(surf, CANVAS_BG, (400, 275), 90)
+    pygame.draw.circle(surf, DRAW_BG, (400, 275), 88)
     pygame.draw.circle(surf, LINE_COLOR, (400, 275), 90, width=6)
     for i in range(8):
         angle = i * (math.pi / 4)
@@ -109,6 +99,8 @@ def draw_clean_sun(surf):
 
 def draw_clean_house(surf):
     surf.fill(CANVAS_BG)
+    pygame.draw.rect(surf, DRAW_BG, (283, 263, 234, 194))
+    pygame.draw.polygon(surf, DRAW_BG, [(400, 123), (243, 257), (557, 257)])
     pygame.draw.rect(surf, LINE_COLOR, (280, 260, 240, 200), width=6)
     pygame.draw.polygon(surf, LINE_COLOR, [(400, 120), (240, 260), (560, 260)], width=6)
     pygame.draw.rect(surf, LINE_COLOR, (350, 310, 100, 90), width=5)
@@ -116,54 +108,52 @@ def draw_clean_house(surf):
     pygame.draw.line(surf, LINE_COLOR, (350, 350), (450, 350), width=4)
 
 def draw_clean_car(surf):
-    """Идеальный силуэт «Жука» через логическое пересечение фигур."""
     surf.fill(CANVAS_BG)
-    
-    # 1. Кузов (большой овал)
-    pygame.draw.ellipse(surf, LINE_COLOR, (150, 150, 500, 220), width=6)
-    
-    # Затираем низ овала, чтобы получить ровное днище
-    pygame.draw.rect(surf, CANVAS_BG, (145, 371, 510, 200))
-    
-    # 2. Окна (два прямоугольника со скругленными углами, стоящие на одной линии)
-    # Левое окно
-    pygame.draw.rect(surf, LINE_COLOR, (280, 220, 110, 100), width=5, border_radius=5)
-    # Правое окно
-    pygame.draw.rect(surf, LINE_COLOR, (410, 220, 110, 100), width=5, border_radius=5)
-    
-    # 3. Колёса (с затиранием фона, чтобы перекрыть раму кузова)
-    for cx in (240, 560):
-        pygame.draw.circle(surf, CANVAS_BG, (cx, 360), 52)
-        pygame.draw.circle(surf, LINE_COLOR, (cx, 360), 48, width=6) # Шина
-        pygame.draw.circle(surf, LINE_COLOR, (cx, 360), 22, width=5) # Диск
 
-    # 4. Крылья (дуги над колесами)
-    pygame.draw.arc(surf, LINE_COLOR, (180, 300, 120, 90), 0, math.pi, 6)
-    pygame.draw.arc(surf, LINE_COLOR, (500, 300, 120, 90), 0, math.pi, 6)
+    base_y = 340
+    body_pts = [
+        (150, base_y),
+        (220, base_y - 140),
+        (580, base_y - 140),
+        (650, base_y)
+    ]
+    pygame.draw.polygon(surf, DRAW_BG, body_pts)
+    pygame.draw.lines(surf, LINE_COLOR, False, body_pts, 6)
+    pygame.draw.line(surf, LINE_COLOR, (150, base_y), (650, base_y), width=6)
 
-    # 5. Бамперы
-    pygame.draw.rect(surf, LINE_COLOR, (120, 345, 40, 15), border_radius=5)
-    pygame.draw.rect(surf, LINE_COLOR, (640, 345, 40, 15), border_radius=5)
-    
-    # Фары
-    pygame.draw.circle(surf, LINE_COLOR, (140, 352), 5)
-    pygame.draw.circle(surf, LINE_COLOR, (660, 352), 5)
+    # === ОКНА (БОЛЬШИЕ ТРАПЕЦИИ) ===
+    win1_pts = [(260, 300), (385, 300), (365, 230), (280, 230)]
+    pygame.draw.polygon(surf, DRAW_BG, win1_pts)
+    pygame.draw.lines(surf, LINE_COLOR, True, win1_pts, 5)
 
-    # 6. Ручка двери
-    pygame.draw.rect(surf, LINE_COLOR, (400, 295, 20, 8), border_radius=3)
+    win2_pts = [(415, 300), (540, 300), (520, 230), (435, 230)]
+    pygame.draw.polygon(surf, DRAW_BG, win2_pts)
+    pygame.draw.lines(surf, LINE_COLOR, True, win2_pts, 5)
+
+    pygame.draw.line(surf, LINE_COLOR, (400, 230), (400, 300), 5)
+
+    # === КОЛЁСА ===
+    for cx in (260, 540):
+        pygame.draw.circle(surf, LINE_COLOR, (cx, 370), 44)
+        pygame.draw.circle(surf, DRAW_BG, (cx, 370), 36)
+        pygame.draw.circle(surf, LINE_COLOR, (cx, 370), 16)
+        pygame.draw.circle(surf, DRAW_BG, (cx, 370), 12)
+
+    pygame.draw.circle(surf, LINE_COLOR, (150, base_y), 8)
+    pygame.draw.circle(surf, LINE_COLOR, (650, base_y), 8)
+    pygame.draw.rect(surf, LINE_COLOR, (395, 300, 12, 6), border_radius=2)
 
 pic_drawers = {0: draw_clean_sun, 1: draw_clean_house, 2: draw_clean_car}
 current_pic_id = 2
 pic_drawers[current_pic_id](canvas_surface)
 
-# ============================================================
-# FLOOD FILL
-# ============================================================
 def flood_fill(surface, start_pos, fill_color):
     width, height = surface.get_size()
     target_color = surface.get_at(start_pos)[:3]
 
-    if target_color == fill_color or target_color == LINE_COLOR or target_color == BG_COLOR:
+    if target_color == fill_color or target_color == LINE_COLOR or target_color == CANVAS_BG:
+        return False
+    if target_color != DRAW_BG:
         return False
 
     surface.lock()
@@ -183,16 +173,13 @@ def flood_fill(surface, start_pos, fill_color):
     return filled > 0
 
 def check_canvas_complete(surf):
-    for _ in range(400):
-        rx = random.randint(180, 640)
-        ry = random.randint(120, 440)
-        if surf.get_at((rx, ry))[:3] == (255, 255, 255):
-            return False
+    w, h = surf.get_size()
+    for x in range(0, w, 4):
+        for y in range(0, h, 4):
+            if surf.get_at((x, y))[:3] == DRAW_BG:
+                return False
     return True
 
-# ============================================================
-# ЭЛЕМЕНТЫ ИНТЕРФЕЙСА
-# ============================================================
 class PaintBucket:
     def __init__(self, x, y, radius, color, note):
         self.x = x
@@ -236,14 +223,11 @@ for i, (color, note) in enumerate(PALETTE_DATA):
 menu_buttons = [
     PictureButton(40, 25, 130, 45, "Солнышко", 0),
     PictureButton(195, 25, 130, 45, "Домик", 1),
-    PictureButton(350, 25, 130, 45, "Машинка", 2)
+    PictureButton(350, 25, 130, 45, "Машинка", 2),
 ]
 
 ok_btn_rect = pygame.Rect(380, 420, 240, 60)
 
-# ============================================================
-# ГЛАВНЫЙ ЦИКЛ
-# ============================================================
 running = True
 while running:
     screen.fill(BG_COLOR)
@@ -278,9 +262,8 @@ while running:
             continue
 
         if pygame.USEREVENT + 10 <= event.type <= pygame.USEREVENT + 13:
-            note_idx = event.type - (pygame.USEREVENT + 10)
-            win_notes = [60, 64, 67, 72]
-            play_piano_note(win_notes[note_idx])
+            idx = event.type - (pygame.USEREVENT + 10)
+            play_piano_note([60, 64, 67, 72][idx])
             continue
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -330,7 +313,7 @@ while running:
                             "vy": random.uniform(-4, 4),
                             "radius": float(random.randint(5, 12)),
                             "color": active_color,
-                            "life": 1.0
+                            "life": 1.0,
                         })
 
                     if check_canvas_complete(canvas_surface):
@@ -350,10 +333,10 @@ while running:
         font_big = pygame.font.SysFont("Comic Sans MS", 34, bold=True)
         font_small = pygame.font.SysFont("Comic Sans MS", 22, bold=True)
 
-        text_line1 = font_big.render("Ура! Ты молодец!", True, (255, 89, 94))
-        text_line2 = font_small.render("Какая красивая картинка получилась!", True, (67, 97, 238))
-        screen.blit(text_line1, text_line1.get_rect(centerx=box_rect.centerx, y=box_rect.y + 55))
-        screen.blit(text_line2, text_line2.get_rect(centerx=box_rect.centerx, y=box_rect.y + 130))
+        t1 = font_big.render("Ура! Ты молодец!", True, (255, 89, 94))
+        t2 = font_small.render("Какая красивая картинка получилась!", True, (67, 97, 238))
+        screen.blit(t1, t1.get_rect(centerx=box_rect.centerx, y=box_rect.y + 55))
+        screen.blit(t2, t2.get_rect(centerx=box_rect.centerx, y=box_rect.y + 130))
 
         pygame.draw.rect(screen, SHADOW_COLOR, ok_btn_rect.move(2, 3), border_radius=15)
         pygame.draw.rect(screen, (138, 201, 38), ok_btn_rect, border_radius=15)
